@@ -9,7 +9,7 @@ exports.review = async(req,res)=>{
         if(!userid,!roomid,!comment,!rating) return res.status(401).json({warning:"all fields are necessary"})
             const review = await Reviews.create({roomid:roomid,...req.body})
         if(!review)return res.status(200).json({error:"failed to create reviews"})
-        return res.status(201).json({sucess:"sucessfully created"})
+        return res.status(201).json({review})
     
         } catch (error) {
             console.log(error)

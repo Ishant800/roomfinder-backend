@@ -16,7 +16,7 @@ cloudinary,
 params:{
     folder:"meroroom",
     allowed_formats:["jpeg","jpg","png","webp","avif"],
-    transformation:[{height:500,width:500,crop:"limit"}]
+    transformation:[{height:100,width:100,crop:"limit"}]
 }
 })
 

@@ -2,8 +2,10 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { configDotenv } = require("dotenv");
 const { User, UserDetails } = require("../models/auth");
+const AppError = require("../utils/appError");
+const  asyncHandler  = require("../utils/asyncHandler");
 configDotenv();
-
+    
 exports.usersignup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -16,11 +18,11 @@ exports.usersignup = async (req, res) => {
 
     const hashedpassword = await bcrypt.hash(password, 8);
 
-   const user = await User.create({
+   const user = await User.create({    
       username,
       email,
-      password: hashedpassword,
-      role:req.body.role
+      password: hashedpassword,   
+      role:req.body.role 
     });
     if(user){
       await UserDetails.create({
@@ -34,6 +36,26 @@ exports.usersignup = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.cerateusers = asyncHandler(async(req,res,next)=>{
+   const {username,email,password} = req.body
+   if(!username || !email || !password){
+    throw new AppError("please provide all required fields", 400)
+
+   }
+   if(password.length < 6){
+    throw new AppError("Password length most be at least 6 characters",400)
+   }
+  const user = await User.create(req.body)
+  if(!user){
+    throw new AppError("Failed to create user", 404)
+  }
+
+  res.status(201).json({
+    status: 'sucess',
+    data:user
+  })
+})
 
 exports.userlogin = async (req, res) => {
   try {
@@ -100,7 +122,7 @@ exports.users = async (req,res)=>{
 }
 
 
-exports.getusers = async (req,res)=>{
+exports.getusers = async (req,res,next)=>{
   try {
     
     const id = req.params.userid
@@ -115,10 +137,18 @@ exports.getusers = async (req,res)=>{
       email:users.email,
       phoneno:details.Phone_no
     }
+
+    if(!usersdata){
+      throw new AppError("No users found with that ID")
+    }
+
      
-      return res.status(200).json({usersdata})
-  } catch (error) {
-    return res.status(500).json({error:"internal server error"})
+      res.status(200).json({
+        status:'sucess',
+        usersdata
+      })
+  } catch (err) {
+    next(err)
   }
 }
 
@@ -140,7 +170,7 @@ exports.mydetails = async (req,res)=>{
       city:details.city,
       zipcode:details.Zip_code
 
-    }
+    } 
      
   if(mydetails)
     return res.status(200).json({mydetails})

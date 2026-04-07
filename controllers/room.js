@@ -1,7 +1,7 @@
 const { User } = require("../models/auth")
 const Roombooked = require("../models/bookedroom")
 const { Room } = require("../models/roommodel")
-
+const asyncHandler = require("../utils/asyncHandler")
 const sendEmail = require("../utility/email")
 
 exports.listroom = async (req, res) => {
@@ -70,31 +70,69 @@ exports.deleteroom = async (req, res) => {
   }
 }
 
+// const redis = require("redis")
+// const client = redis.createClient();
+
+
+// client.connect().catch(console.error);
+
+// string opertaions
+
+//hashses opertaions
+// exports.HashOperations = async()=>{
+//    const userprofile = {
+//     name:"dev_master",
+//     email:"devmaster@gmail.com",
+//     age:'22'
+    
+//    }
+
+
+//    await client.hSet("user:101",userprofile);
+   
+// }
+
 exports.getrooms = async (req, res) => {
-  try {
+
+  // const cachedkey = "all_rooms";
+
+  try { 
+
+    //1. try to get data from redis
+    //  const cachedData = await client.get(cachedkey);
+    //  if(cachedData){
+    //   console.log("CACHE HIT ");
+    //   return res.json(JSON.parse(cachedData))
+    //  }
+
+    //  //2. if not in redis 
+    //  console.log("Cache miss")
     const rooms = await Room.find()
     if (!rooms.length) return res.status(404).json({ message: "No rooms found" });
+    
 
-    return res.status(200).json({ rooms })
+    // await client.setEx(cachedkey,3600,JSON.stringify(rooms));
+    res.json({ rooms })
 
   } catch (error) {
     console.log(error)
-    return res.status(501).json({ Message: "internal server error" })
+    return res.json({ Message: "internal server error" })
   }
 }
 
-exports.roomdetails = async (req, res) => {
-  try {
+
+exports.roomdetails =  asyncHandler(async (req, res,next) => {
+ 
     const id = req.params.id
     const existroom = await Room.findOne({ _id: id })
-    if (!existroom) return res.status(401).json({ Message: "room not found in databases" })
+    if (!existroom) throw new Error("User not found")
+  
    
-    return res.status(200).json({ existroom })
+    res.status(200).json({ existroom })
 
-  } catch (error) {
-    return res.status(501).json({ Message: "internal server error" })
-  }
-}
+   
+   
+})
 
 
 exports.properties = async (req, res) => {
