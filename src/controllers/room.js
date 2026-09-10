@@ -3,6 +3,8 @@ const Roombooked = require("../models/bookedroom")
 const { Room } = require("../models/roommodel")
 const asyncHandler = require("../utils/asyncHandler")
 const sendEmail = require("../utility/email")
+const { redis } = require("../config/redis")
+
 
 exports.listroom = async (req, res) => {
   try {
@@ -70,65 +72,59 @@ exports.deleteroom = async (req, res) => {
   }
 }
 
-// const redis = require("redis")
-// const client = redis.createClient();
-
-
-// client.connect().catch(console.error);
-
-// string opertaions
-
-//hashses opertaions
-// exports.HashOperations = async()=>{
-//    const userprofile = {
-//     name:"dev_master",
-//     email:"devmaster@gmail.com",
-//     age:'22'
-    
-//    }
-
-
-//    await client.hSet("user:101",userprofile);
-   
-// }
 
 exports.getrooms = async (req, res) => {
-
-  // const cachedkey = "all_rooms";
-
   try { 
+    const cacheKey = "rooms";
 
-    //1. try to get data from redis
-    //  const cachedData = await client.get(cachedkey);
-    //  if(cachedData){
-    //   console.log("CACHE HIT ");
-    //   return res.json(JSON.parse(cachedData))
-    //  }
+    //1.check redis first
+    const cahedRoom = await redis.get(cacheKey);
+    if(cahedRoom){
+      console.log("Serving from cache")
+      return res.type("json").send(`{"rooms" : ${cahedRoom}}`)
+    }
 
-    //  //2. if not in redis 
-    //  console.log("Cache miss")
+    //if no cached hit mongo
     const rooms = await Room.find()
-    if (!rooms.length) return res.status(404).json({ message: "No rooms found" });
-    
+    if (!rooms.length) {
+      return res.status(200).json({ 
+        rooms:[],
+        message: "No rooms found" });}
 
-    // await client.setEx(cachedkey,3600,JSON.stringify(rooms));
-    res.json({ rooms })
+       await redis.set(cacheKey,JSON.stringify(rooms),"EX",3600);
 
+        res.json({ rooms })
+
+         //set in cached
   } catch (error) {
     console.log(error)
-    return res.json({ Message: "internal server error" })
+    return res.status(500).json({ error: "internal server error" })
   }
 }
 
 
 exports.roomdetails =  asyncHandler(async (req, res,next) => {
- 
-    const id = req.params.id
+ try{
+
+   const id = req.params.id
+   const cachedkey = `rooms:${id}`
+
+     const cachedRoom = await redis.get(cachedkey);
+     if(cachedRoom){
+      return res.type('json').send(cachedRoom)
+     }
+
+
     const existroom = await Room.findOne({ _id: id })
-    if (!existroom) throw new Error("User not found")
+    if (!existroom)  return res.status(404).send(`Room not found: ${id}`)
   
-   
-    res.status(200).json({ existroom })
+   await redis.set(cachedkey,JSON.stringify(existroom),"EX",3600);
+    return res.json( existroom )
+ }
+ catch(err){
+   return res.status(500).send(err);
+ }
+    
 
    
    

@@ -1,12 +1,14 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-RUN npm install --legacy-peer-deps
+RUN npm ci --omit=dev 
 
-COPY . .
+COPY src ./src
+
+USER node
+
 EXPOSE 5000
-
-CMD [ "npm","start" ]
+CMD [ "node","src/server.js" ]

@@ -8,18 +8,23 @@ exports.accesstoken = async (req,res,next)=>{
    
        const token = authHeader && authHeader.split(' ')[1];
       
-    // const token = req.cookies?.token
        if(!token){
         console.log("token not found")
-         return res.status(401).json({message:"token not provided"})
+         return res.status(401).json({error:"Authentication token not provided"})
        }
        
         const decode = jwt.verify(token,process.env.SECRETE_KEY)
         req.user = decode
         next()
     } catch (error) {
-    console.error(error)
-         return res.status(501).json({Message:error})
+        console.error("Token verification error:", error)
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({error:"Token has expired, please login again"})
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({error:"Invalid token"})
+        }
+        return res.status(401).json({error:"Authentication failed"})
     }
 }
 

@@ -1,0 +1,48 @@
+services:
+  redis:
+   image: redis:7-alpine
+   container_name: redis-container
+   volumes:
+     - redis_data:/data
+
+
+  server:
+    build:
+      context: .
+      # dockerfile: Dockerfile
+    container_name: backend-server
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: "mongodb+srv://ishantkarmacharya:meroroom@meroroom.xht7bvn.mongodb.net/?retryWrites=true&w=majority&appName=meroroom"
+      SECRETE_KEY: "haha"
+      CLOUDINARY_CLOUD_NAME: "djh5owgby"
+      CLOUDINARY_API_KEY: "321633291255335"
+      CLOUDINARY_API_SECRET: "37PdgwDLqBJ1pah2VM4GydWzyBg"
+      EMAIL_USER: ishantkarmacharya@gmail.com
+      EMAIL_PASS: abixcdrgelxokoqs
+
+    depends_on:
+    - redis
+
+  worker:
+    build:
+      # context: contextPath
+      # dockerfile: Dockerfile
+      context: .
+    container_name: email-worker
+    command: ["node", "src/worker.js"]
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+    - redis
+
+volumes:
+    redis_data:
+
+  

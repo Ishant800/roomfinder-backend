@@ -1,7 +1,14 @@
-const { configDotenv } = require('dotenv')
+
 const nodemailer = require('nodemailer')
-configDotenv()
+
+
+
 const sendEmail = async ({ to, subject, html }) => {
+
+    
+    if(!process.env.EMAIL_USER || !process.env.EMAIL_PASS){
+        throw new Error("Email_USER or EMAIL PAss is missing in env")
+    }
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -15,12 +22,10 @@ const sendEmail = async ({ to, subject, html }) => {
         subject,
         html,
     }
-    try {
-        await transporter.sendMail(mailOptions)
-        console.log("sucessfully email sent")
-    } catch (error) {
-        console.log(error)
-    }}
+    
+        await transporter.sendMail(mailOptions);
+        console.log("sucessfully email sent to: ", to)
+}
 module.exports = sendEmail
 
 

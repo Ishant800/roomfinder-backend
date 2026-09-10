@@ -4,6 +4,7 @@ const { configDotenv } = require("dotenv");
 const { User, UserDetails } = require("../models/auth");
 const AppError = require("../utils/appError");
 const  asyncHandler  = require("../utils/asyncHandler");
+const { emailQueue } = require("../queue/email.queue");
 configDotenv();
     
 exports.usersignup = async (req, res) => {
@@ -11,24 +12,36 @@ exports.usersignup = async (req, res) => {
     const { username, email, password } = req.body;
    
     if (!username || !email || !password)
-      return res.status(401).json({ error: "All fields are mandatory" });
+      return res.status(400).json({ error: "All fields are mandatory" });
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long" });
+    }
 
     const userexists = await User.findOne({email:email});
-    if (userexists) return res.status(401).json({ error: "User already exists" });
+    if (userexists) return res.status(409).json({ error: "User already exists" });
 
-    const hashedpassword = await bcrypt.hash(password, 8);
+    const hashedpassword = await bcrypt.hash(password, 10);
 
    const user = await User.create({    
       username,
       email,
       password: hashedpassword,   
-      role:req.body.role 
+      role:req.body.role || 'user'
     });
     if(user){
       await UserDetails.create({
         userid:user._id,
       })
     }
+
 
     return res.status(201).json({ message: "User created successfully" });
   } catch (error) {
@@ -62,21 +75,27 @@ exports.userlogin = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password)
-      return res.status(401).json({ error: "All fields are mandatory" });
+      return res.status(400).json({ error: "All fields are mandatory" });
 
     const user = await User.findOne({email:email});
-    if (!user) return res.status(401).json({ error: "User not found" });
+    if (!user) return res.status(401).json({ error: "Invalid email or password" });
 
     const passwordmatch = await bcrypt.compare(password, user.password);
-    if (!passwordmatch) return res.status(401).json({ error: "Password not matched" });
+    if (!passwordmatch) return res.status(401).json({ error: "Invalid email or password" });
 
     const acesstoken = jwt.sign({
       id:user._id,role:user.role,username:user.username,email:user.email
     },process.env.SECRETE_KEY,{expiresIn:'7d'})
 
-     
-
-    return res.status(200).json({ acesstoken });
+    return res.status(200).json({ 
+      acesstoken,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error("Login Error:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -90,19 +109,30 @@ exports.profileupdate = async(req,res)=>{
        if(!userId) return res.status(401).json({error:"missing userid"})
       
       const imagepath = req.file?.path
-      if(!imagepath) return res.status(401).json({error:"image url missing"})
-
       
-        const existsuser = await User.findById(userId)
+      const existsuser = await User.findById(userId)
 
-if(!existsuser) return res.status(401).json({error:"user not found"})
+      if(!existsuser) return res.status(404).json({error:"user not found"})
 
-    const updateuser = await UserDetails.findByIdAndUpdate({
-        userid:existsuser._id,profile_pic_url:imagepath,...req.body
-    })
+      const updateData = {
+        ...req.body
+      };
+      
+      if(imagepath) {
+        updateData.profile_pic_url = imagepath;
+      }
 
-if(updateuser)
-    return res.status(201).json({"message":"user update sucessfully"})
+      const updateuser = await UserDetails.findOneAndUpdate(
+        { userid: existsuser._id },
+        updateData,
+        { new: true, upsert: true }
+      )
+
+      if(updateuser)
+        return res.status(200).json({
+          message:"user updated successfully",
+          data: updateuser
+        })
 
      } catch (error) {
         console.log(error)
@@ -156,6 +186,11 @@ exports.mydetails = async (req,res)=>{
   try {
     const id = req.user.id
     const me = await User.findById(id)
+    
+    if(!me) {
+      return res.status(404).json({error:"User not found"})
+    }
+
     const details = await UserDetails.findOne({userid:id})
 
     const mydetails = {
@@ -163,20 +198,18 @@ exports.mydetails = async (req,res)=>{
       name:me.username,
       email:me.email,
       role:me.role,
-      profilepic:details.profile_pic_url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpZrw_z22PXFc37Yqqir6DdpReF5vpJLc3JN10O-qrfLEmCAr_wOCgJ2i5NytJMYABNbw&usqp=CAU",
-      fullname:details.fullName,
-      phoneno:details.Phone_no,
-      bio:details.bio,
-      city:details.city,
-      zipcode:details.Zip_code
-
+      profilepic:details?.profile_pic_url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpZrw_z22PXFc37Yqqir6DdpReF5vpJLc3JN10O-qrfLEmCAr_wOCgJ2i5NytJMYABNbw&usqp=CAU",
+      fullname:details?.fullName || "",
+      phoneno:details?.Phone_no || "",
+      bio:details?.bio || "",
+      city:details?.city || "",
+      zipcode:details?.Zip_code || ""
     } 
      
-  if(mydetails)
     return res.status(200).json({mydetails})
 
   } catch (error) {
     console.log(error)
-    return res.status(501).json({Error:"internal server error"})
+    return res.status(500).json({error:"internal server error"})
   }
 } 
