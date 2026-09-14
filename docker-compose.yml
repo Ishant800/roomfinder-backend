@@ -14,16 +14,16 @@ services:
     ports:
       - "5000:5000"
     environment:
-      NODE_ENV: production
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DATABASE_URL: "mongodb+srv://ishantkarmacharya:meroroom@meroroom.xht7bvn.mongodb.net/?retryWrites=true&w=majority&appName=meroroom"
-      SECRETE_KEY: "haha"
-      CLOUDINARY_CLOUD_NAME: "djh5owgby"
-      CLOUDINARY_API_KEY: "321633291255335"
-      CLOUDINARY_API_SECRET: "37PdgwDLqBJ1pah2VM4GydWzyBg"
-      EMAIL_USER: ishantkarmacharya@gmail.com
-      EMAIL_PASS: abixcdrgelxokoqs
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRETE_KEY=${SECRETE_KEY}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
 
     depends_on:
     - redis
@@ -36,9 +36,9 @@ services:
     container_name: email-worker
     command: ["node", "src/worker.js"]
     environment:
-      NODE_ENV: production
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      - NODE_ENV=${NODE_ENV}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
     depends_on:
     - redis
 

@@ -1,6 +1,6 @@
 
 const {Worker} = require('bullmq')
-const { redisConnection, QUEUE_NAME, SOCKET_QUEUE } = require('./config/redis');
+const { redis, QUEUE_NAME, SOCKET_QUEUE } = require('./config/redis');
 
 async function sendWellcomeEmail(jobData){
   console.log('email service : sending email to user ',jobData.userId);
@@ -31,7 +31,7 @@ const myWorker = new Worker(QUEUE_NAME,async(job)=>{
       console.log(" unknown job type", job.name)
   }
 },{
-  connection: redisConnection,
+  connection: redis,
   concurrency: 2
 })
 
@@ -43,7 +43,7 @@ const socketWorker = new Worker(SOCKET_QUEUE,async(job)=>{
 
   //helper function to broadcast updates securely back to the api layer
   const sendUpdate = (eventName, payload) => {
-    redisConnection.publish("socket-bridge",JSON.stringify({
+    redis.publish("socket-bridge",JSON.stringify({
       socketId,
       eventName,
       payload
@@ -63,6 +63,7 @@ const socketWorker = new Worker(SOCKET_QUEUE,async(job)=>{
     percentage: 50,
     message: "Rendering corporate billing layers..."
   })
+
   await new Promise(res => setTimeout(res, 2000)); // 2 second delay
   sendUpdate("status_update",{
     percentage: 75,
@@ -82,7 +83,7 @@ const socketWorker = new Worker(SOCKET_QUEUE,async(job)=>{
   })
 
 
-},{connection: redisConnection})
+},{connection: redis})
 
 
 myWorker.on('completed',(job)=>{

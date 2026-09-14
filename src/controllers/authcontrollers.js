@@ -4,7 +4,7 @@ const { configDotenv } = require("dotenv");
 const { User, UserDetails } = require("../models/auth");
 const AppError = require("../utils/appError");
 const  asyncHandler  = require("../utils/asyncHandler");
-const { emailQueue } = require("../queue/email.queue");
+
 configDotenv();
     
 exports.usersignup = async (req, res) => {
