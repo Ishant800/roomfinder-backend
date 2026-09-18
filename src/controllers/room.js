@@ -67,7 +67,7 @@ exports.deleteroom = async (req, res) => {
     await Room.findByIdAndDelete(id)
 
     return res.status(200).json({ message: "deleted sucessfully" })
-  } catch (error) {
+  } catch {
     return res.status(501).json({ Message: "internal server error" })
   }
 }
@@ -103,7 +103,7 @@ exports.getrooms = async (req, res) => {
 }
 
 
-exports.roomdetails =  asyncHandler(async (req, res,next) => {
+exports.roomdetails =  asyncHandler(async (req, res) => {
  try{
 
    const id = req.params.id

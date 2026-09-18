@@ -8,8 +8,7 @@ module.exports = function(io){
     //authentications middlewares 
     io.use((socket,next)=>{
         try{
-            const token = socket.handshake.auth?.token || socket.handshake.query?.token || 
-                      s
+            const token = socket.handshake.auth?.token || socket.handshake.query?.token
             if(!token){
                 console.error("Connection blocked: No token provided by socket: ",socket.id)
                 return next(new Error("Authentication error: Token missing"))
@@ -23,7 +22,7 @@ module.exports = function(io){
             //token is verified! proceed to the connection handler safely
             next();
         }
-        catch(error){
+        catch{
             console.error('connection blocked: invalid token processing');
             return next(new Error("Authentication error: Invalid or expired token"))
         }
@@ -32,7 +31,7 @@ module.exports = function(io){
     // duplicate connection client so it can enter a listening state securely
     const subClient = redis.duplicate();
     
-    subClient.subscribe("socket-bridge",(err,count)=>{
+    subClient.subscribe("socket-bridge",(err)=>{
         if(err){
             console.log("failed to subscribe to channel")
         }

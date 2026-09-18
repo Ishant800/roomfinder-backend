@@ -35,7 +35,7 @@ exports.adminmiddleware = async (req,res,next) =>{
         if(admincheck.role !== "admin") return res.status(401).json({Message:"Acess deneid you are not allowed!"})
          
             next()    
-        } catch (error) {
+        } catch {
         return res.status(401).json({Message:"Invalid acess denied"})
     }
 }
@@ -47,7 +47,7 @@ exports.usermiddleware = async (req,res,next) =>{
         if(admincheck.role !== "user") return res.status(401).json({Message:"Acess deneid"})
          
             next()    
-        } catch (error) {
+        } catch {
         return res.status(401).json({Message:"Invalid acess denied"})
     }
 }

@@ -63,7 +63,7 @@ exports.qna=async(req,res)=>{
         if(!qna)return res.status(200).json({error:"failed to create qna"})
         return res.status(201).json({sucess:"sucessfully created"})
     
-        } catch (error) {
+        } catch {
         return res.status(501).json({error:"internal server error"})
     }
 }
@@ -79,7 +79,7 @@ exports.updateqna = async (req,res)=>{
          })   
          if(!updateqna) return res.status(200).json({error:"failed to update answers"})
         return res.status(201).json({sucess:"sucessfully created"})
-        } catch (error) {
+        } catch {
        return res.status(501).json({error:"internal server error"}) 
     }
 }
@@ -91,7 +91,7 @@ exports.getqna = async(req,res)=>{
        const reviews = await Reviews.find({roomid:roomid})
        if(!reviews) return res.status(200).json({reviews})
         return res.status(200).json({reviews})
-    } catch (error) {
+    } catch {
        return res.status(501).json({error:"internal server error"}) 
     }
 }

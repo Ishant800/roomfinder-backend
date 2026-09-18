@@ -50,7 +50,7 @@ exports.usersignup = async (req, res) => {
   }
 };
 
-exports.cerateusers = asyncHandler(async(req,res,next)=>{
+exports.cerateusers = asyncHandler(async(req,res)=>{
    const {username,email,password} = req.body
    if(!username || !email || !password){
     throw new AppError("please provide all required fields", 400)
@@ -146,7 +146,7 @@ exports.users = async (req,res)=>{
     const users = await User.find()
     if(!users) return res.status(401).json({messae:'no user found'})
       return res.status(200).json({users})
-  } catch (error) {
+  } catch {
     return res.status(500).json({error:"internal server error"})
   }
 }
