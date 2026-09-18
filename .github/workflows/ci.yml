@@ -28,9 +28,8 @@ jobs:
         run: npm ci
       
       - name: Export All Secrets to Environment
-        uses: reedyuk/export-json-to-env-action@v2
-        with:
-          json: ${{ secrets.APP_SECRETS }}
+        run: |
+          echo '${{ secrets.APP_SECRETS }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> $GITHUB_ENV
 
       - name: Run linter
         run: npm run lint
